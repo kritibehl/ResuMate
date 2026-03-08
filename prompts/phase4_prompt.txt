@@ -1,0 +1,48 @@
+Implement Phase 4 for my FastAPI project ResuMate.
+
+Current state:
+- GET /health works
+- POST /v1/jobs works
+- GET /v1/jobs/{job_id} works
+- GET /v1/history works
+- GET /v1/versions works
+- POST /v1/batches works
+- GET /v1/batches/{batch_id} works
+- POST /v1/diff works
+- POST /v1/exports/job/{job_id} works
+- smoke tests pass
+- storage is still in-memory
+- analyzer is still fallback-only
+- Mongo remains disabled
+
+Phase 4 goals:
+- add dashboard
+- add metrics endpoints
+- add output stability checks
+- keep implementation simple and runnable
+- no frontend framework beyond a lightweight dashboard
+
+Create full contents for:
+- app/api/routes_dashboard.py
+- app/services/metrics_service.py
+- app/services/stability_service.py
+- dashboard/streamlit_app.py
+
+Requirements:
+- add GET /v1/dashboard/summary
+- add GET /v1/dashboard/jobs
+- add GET /v1/dashboard/stability
+- summary should include:
+  - total_jobs
+  - total_batches
+  - avg_processing_time_ms
+  - success_rate
+- jobs endpoint should return recent jobs
+- stability endpoint should group jobs by input_fingerprint and report repeated input counts
+- Streamlit dashboard should show:
+  - summary metrics
+  - recent jobs table
+  - stability table
+- use existing in-memory data from routes/jobs and routes/batches
+- keep schemas/output stable and simple
+- return full file contents only
