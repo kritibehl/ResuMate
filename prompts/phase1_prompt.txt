@@ -1,0 +1,74 @@
+Generate the Phase 1 backend foundation for my FastAPI project ResuMate.
+
+Current repo state:
+- old prototype files still exist at root: main.py, db.py
+- new folders already exist: app/api, app/schemas, app/services, app/storage, app/utils
+- app/main.py currently only contains a minimal FastAPI health stub
+- .env contains MONGO_URI and OPENAI_API_KEY
+- MongoDB should use database name "resumate"
+- Goal is to replace the stub with a production-style foundation
+
+Create full contents for these files:
+- app/config.py
+- app/main.py
+- app/api/routes_health.py
+- app/api/routes_jobs.py
+- app/schemas/request.py
+- app/schemas/response.py
+- app/schemas/errors.py
+- app/storage/db.py
+- app/storage/repositories/jobs.py
+- app/services/analyzer.py
+- app/utils/hashing.py
+- app/utils/timing.py
+
+Phase 1 requirements:
+- use FastAPI with APIRouter
+- app/main.py must expose `app`
+- add GET /health
+- add POST /v1/jobs
+- add GET /v1/jobs/{job_id}
+- use Pydantic models for request and response
+- request should accept:
+  - document_text
+  - reference_text
+  - document_type
+  - reference_type
+  - metadata
+- response must be stable structured JSON, not free-form
+- include schema_version
+- generate job_id server-side
+- compute sha256 input fingerprint from normalized document/reference text
+- store structured jobs in MongoDB
+- use collection name `jobs`
+- isolate all analysis logic in app/services/analyzer.py
+- use modern OpenAI Python client style
+- if the LLM call fails or returns unstable content, still return a schema-valid fallback response
+- keep implementation simple and runnable
+- do not add batch mode, diff, exports, dashboard, or tests yet
+
+Functional expectations:
+- POST /v1/jobs should create a job record and return structured analysis
+- GET /v1/jobs/{job_id} should fetch the stored record
+- GET /health should return a small status response
+
+Response schema expectations:
+- top-level keys should be fixed and always present
+- arrays should default to []
+- include processing_time_ms
+- include analysis object with:
+  - coverage_score
+  - matched_requirements
+  - gaps
+  - suggested_actions
+- include errors as []
+- include created_at in ISO UTC format
+
+Code quality expectations:
+- clean imports
+- no duplicate DB setup
+- environment loading through config.py
+- small helper functions where appropriate
+- avoid overengineering
+
+Return full file contents only.

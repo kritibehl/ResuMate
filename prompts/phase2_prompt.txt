@@ -1,0 +1,42 @@
+Implement Phase 2 for my FastAPI project ResuMate.
+
+Current state:
+- Phase 1 works
+- GET /health works
+- POST /v1/jobs works
+- GET /v1/jobs/{job_id} works
+- tests pass
+- currently using in-memory job storage
+- analyzer is currently fallback-only
+- Mongo is temporarily disabled
+
+Phase 2 goals:
+- add batch mode
+- add history/versioning
+- keep stable structured JSON
+- do not add dashboard yet
+- do not add exports yet
+- keep implementation simple and runnable
+
+Create full contents for:
+- app/api/routes_batches.py
+- app/api/routes_versions.py
+- app/schemas/domain.py
+- app/storage/repositories/batches.py
+- app/storage/repositories/versions.py
+- app/services/batch_runner.py
+
+Requirements:
+- add POST /v1/batches
+- add GET /v1/batches/{batch_id}
+- add GET /v1/history
+- add simple version records for inputs
+- use in-memory storage for now
+- batch request should accept a list of job inputs
+- batch response should include batch_id, total_jobs, success_count, failure_count, job_ids
+- history should return recent created jobs
+- version records should store document_name, reference_name, input_fingerprint, created_at
+- keep schemas explicit and stable
+- keep top-level keys fixed
+- use APIRouter
+- return full file contents only

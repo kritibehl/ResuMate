@@ -1,0 +1,46 @@
+Implement Phase 3 for my FastAPI project ResuMate.
+
+Current state:
+- GET /health works
+- POST /v1/jobs works
+- GET /v1/jobs/{job_id} works
+- GET /v1/history works
+- GET /v1/versions works
+- POST /v1/batches works
+- GET /v1/batches/{batch_id} works
+- tests pass
+- storage is still in-memory
+- analyzer is still fallback-only
+- Mongo remains disabled
+
+Phase 3 goals:
+- add diff view
+- add export modes
+- keep stable structured JSON
+- keep implementation simple and runnable
+- no dashboard yet
+
+Create full contents for:
+- app/api/routes_exports.py
+- app/services/diff_service.py
+- app/services/export_service.py
+- app/schemas/export.py
+
+Requirements:
+- add POST /v1/diff
+- diff input should compare two job_ids
+- diff response should include:
+  - left_job_id
+  - right_job_id
+  - coverage_score_change
+  - added_requirements
+  - removed_requirements
+  - changed_suggestions
+- add POST /v1/exports/job/{job_id}
+- export formats: json, markdown
+- export response should include export_id, format, content
+- use in-memory data from existing routes/jobs storage
+- keep schemas explicit
+- keep top-level keys fixed
+- use APIRouter
+- return full file contents only
