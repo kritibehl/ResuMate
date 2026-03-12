@@ -197,3 +197,10 @@ ResuMate is framed as an **internal tooling system**, not a consumer AI product.
 - Operational visibility through metrics and dashboarding
 
 The "resume analysis" use case is the vehicle. The backend system is the point.
+---
+
+## Quality and Validation
+
+- Smoke and integration tests cover jobs, batches, diff, exports, dashboard, and schema validation
+- OpenAPI contract tests verify expected endpoint coverage
+- GitHub Actions CI runs the test suite on push and pull request
