@@ -1,12 +1,11 @@
-from app.schemas.domain import VersionRecord
+from typing import Any
+
+_VERSIONS: list[dict[str, Any]] = []
 
 
 class VersionRepository:
-    def __init__(self) -> None:
-        self._versions: dict[str, dict] = {}
+    def create_version(self, version_record: dict[str, Any]) -> None:
+        _VERSIONS.append(version_record)
 
-    def create_version(self, version: VersionRecord) -> None:
-        self._versions[version.version_id] = version.model_dump(mode="json")
-
-    def list_versions(self) -> list[dict]:
-        return list(self._versions.values())
+    def list_versions(self) -> list[dict[str, Any]]:
+        return list(reversed(_VERSIONS))

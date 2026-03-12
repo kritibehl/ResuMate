@@ -1,16 +1,13 @@
 from fastapi import APIRouter
 
-from app.api.routes_jobs import _IN_MEMORY_VERSIONS
-from app.schemas.domain import VersionRecord, VersionsResponse
+from app.schemas.response import VersionListResponse, VersionRecordResponse
+from app.storage.repositories.versions import VersionRepository
 
 router = APIRouter(tags=["versions"])
+repo = VersionRepository()
 
 
-@router.get("/versions", response_model=VersionsResponse)
-def list_versions() -> VersionsResponse:
-    items = sorted(
-        _IN_MEMORY_VERSIONS.values(),
-        key=lambda item: item["created_at"],
-        reverse=True,
-    )
-    return VersionsResponse(items=[VersionRecord.model_validate(item) for item in items])
+@router.get("/versions", response_model=VersionListResponse)
+def get_versions() -> VersionListResponse:
+    items = [VersionRecordResponse.model_validate(item) for item in repo.list_versions()]
+    return VersionListResponse(items=items)
