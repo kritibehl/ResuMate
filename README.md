@@ -393,6 +393,22 @@ npm run dev
 | Backend | http://127.0.0.1:8002 |
 
 ---
+## Access Model
+
+ResuMate currently supports lightweight header-based access control for local and prototype workflows:
+
+- `viewer` — can read-only endpoints
+- `editor` — can create jobs and export results
+- `admin` — full access, including audit log access
+
+## Audit Trail
+
+Admin-visible audit events capture key actions such as:
+
+- `job.create`
+- `job.export`
+
+This makes the platform easier to extend toward multi-user internal tooling workflows.
 
 ## Running Tests
 
