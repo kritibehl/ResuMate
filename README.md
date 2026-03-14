@@ -395,9 +395,9 @@ npm run dev
 ---
 ## Access Model
 
-ResuMate currently supports lightweight header-based access control for local and prototype workflows:
+ResuMate supports lightweight header-based access control for prototype and internal workflows:
 
-- `viewer` — can read-only endpoints
+- `viewer` — read-only access
 - `editor` — can create jobs and export results
 - `admin` — full access, including audit log access
 
@@ -408,7 +408,12 @@ Admin-visible audit events capture key actions such as:
 - `job.create`
 - `job.export`
 
-This makes the platform easier to extend toward multi-user internal tooling workflows.
+This makes the platform easier to extend toward multi-user internal tooling and admin workflows.
+
+## Validation Snapshot
+
+- 16 automated tests passing
+- Covers jobs, batches, diff, exports, dashboard, schema validation, output stability, auth, and audit paths
 
 ## Running Tests
 
