@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 
+from app.api.routes_audit import router as audit_router
 from app.api.routes_batches import router as batches_router
 from app.api.routes_dashboard import router as dashboard_router
 from app.api.routes_exports import router as exports_router
@@ -22,3 +23,4 @@ app.include_router(batches_router, prefix=settings.api_prefix)
 app.include_router(versions_router, prefix=settings.api_prefix)
 app.include_router(exports_router, prefix=settings.api_prefix)
 app.include_router(dashboard_router, prefix=settings.api_prefix)
+app.include_router(audit_router, prefix=settings.api_prefix)

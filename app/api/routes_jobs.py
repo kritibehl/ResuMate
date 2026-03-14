@@ -1,9 +1,12 @@
+from datetime import datetime, timezone
 from uuid import uuid4
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 
+from app.auth.dependencies import AuthContext, require_editor_or_admin
 from app.schemas.request import JobCreateRequest
 from app.schemas.response import HistoryItemResponse, HistoryListResponse, JobResponse
+from app.storage.repositories.audit import AuditRepository
 from app.storage.repositories.jobs import JobRepository
 from app.storage.repositories.versions import VersionRepository
 from app.workers.job_worker import build_queued_job, process_job
@@ -11,6 +14,28 @@ from app.workers.job_worker import build_queued_job, process_job
 router = APIRouter(tags=["jobs"])
 repo = JobRepository()
 version_repo = VersionRepository()
+audit_repo = AuditRepository()
+
+
+def log_audit_event(
+    actor: AuthContext,
+    action: str,
+    resource_type: str,
+    resource_id: str,
+    details: dict | None = None,
+) -> None:
+    audit_repo.create_event(
+        {
+            "event_id": f"audit_{uuid4().hex[:12]}",
+            "actor_id": actor.user_id,
+            "actor_role": actor.role,
+            "action": action,
+            "resource_type": resource_type,
+            "resource_id": resource_id,
+            "created_at": datetime.now(timezone.utc),
+            "details": details or {},
+        }
+    )
 
 
 def _public_job_view(job_record: dict) -> dict:
@@ -19,6 +44,7 @@ def _public_job_view(job_record: dict) -> dict:
         "status": "completed" if job_record["status"] in {"queued", "running", "retrying", "completed"} else "failed",
         "schema_version": job_record["schema_version"],
         "created_at": job_record["created_at"],
+        "updated_at": job_record["updated_at"],
         "processing_time_ms": max(int(job_record.get("processing_time_ms", 0)), 1),
         "input_fingerprint": job_record["input_fingerprint"],
         "analysis": (
@@ -36,8 +62,6 @@ def _public_job_view(job_record: dict) -> dict:
 def create_job_and_version(payload_dict: dict, background_tasks: BackgroundTasks | None = None) -> dict:
     job_record = build_queued_job(payload_dict)
 
-    # Process immediately for current API/test compatibility.
-    # We still keep lifecycle state/timeline in storage.
     import asyncio
     asyncio.run(process_job(job_record))
 
@@ -58,8 +82,24 @@ def create_job_and_version(payload_dict: dict, background_tasks: BackgroundTasks
 
 
 @router.post("/jobs", response_model=JobResponse)
-def create_job(payload: JobCreateRequest, background_tasks: BackgroundTasks) -> JobResponse:
+def create_job(
+    payload: JobCreateRequest,
+    background_tasks: BackgroundTasks,
+    actor: AuthContext = Depends(require_editor_or_admin),
+) -> JobResponse:
     job_record = create_job_and_version(payload.model_dump(mode="json"), background_tasks=background_tasks)
+
+    log_audit_event(
+        actor=actor,
+        action="job.create",
+        resource_type="job",
+        resource_id=job_record["job_id"],
+        details={
+            "document_name": payload.metadata.document_name if payload.metadata else "",
+            "reference_name": payload.metadata.reference_name if payload.metadata else "",
+        },
+    )
+
     return JobResponse.model_validate(_public_job_view(job_record))
 
 
