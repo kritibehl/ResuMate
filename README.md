@@ -1,10 +1,12 @@
 # ResuMate
 
-**An API-first workflow engine for structured document analysis and repeatable automation.**
+> **An API-first workflow engine for structured document analysis and repeatable automation.**
 
-ResuMate accepts single and batch document-analysis jobs, returns schema-validated JSON outputs, tracks history and input versions, supports diffing between runs, exports results in JSON and Markdown, and exposes summary metrics, recent jobs, and stability views through a React/Next.js dashboard.
+ResuMate accepts single and batch document-analysis jobs, returns schema-validated JSON outputs, tracks history and input versions, supports diffing between runs, exports results in JSON and Markdown, and exposes summary metrics, recent jobs, and stability views in a React/Next.js dashboard.
 
 > This is not an AI resume writer. The core problem is **repeatable document-analysis workflow with stable contracts**.
+
+**Workflow:** `submit job` → `process asynchronously` → `compare runs` → `export report`
 
 ---
 
@@ -14,11 +16,14 @@ ResuMate accepts single and batch document-analysis jobs, returns schema-validat
 - [Key Features](#key-features)
 - [Current Prototype Snapshot](#current-prototype-snapshot)
 - [Architecture](#architecture)
-- [Example Workflow](#example-workflow)
 - [Screenshots](#screenshots)
+- [Example Workflow](#example-workflow)
+- [Status Model](#status-model)
 - [API Overview](#api-overview)
 - [Sample Requests & Responses](#sample-requests--responses)
+- [Sample Job Timeline](#sample-job-timeline)
 - [Response Schema](#response-schema)
+- [Why Fingerprinting Exists](#why-fingerprinting-exists)
 - [Project Structure](#project-structure)
 - [Running the App](#running-the-app)
 - [Running Tests](#running-tests)
@@ -33,7 +38,7 @@ ResuMate accepts single and batch document-analysis jobs, returns schema-validat
 
 Given a source document (e.g. a resume) and a reference document (e.g. a job description), ResuMate processes them as a backend job and returns stable, machine-readable output that can be inspected, compared, versioned, and exported.
 
-This mirrors internal productivity tooling where **repeatability, traceability, and structured outputs** matter more than one-off generation.
+This mirrors internal productivity tooling where **repeatability, traceability, and contract-stable outputs** matter more than one-off generation.
 
 ---
 
@@ -49,6 +54,8 @@ This mirrors internal productivity tooling where **repeatability, traceability, 
 | **Diff view** | Compare two job runs and see what changed between them |
 | **Exports** | Export results as JSON or Markdown |
 | **Dashboard** | Summary metrics, recent jobs, and stability grouping through a React/Next.js frontend |
+| **Async lifecycle** | Jobs move through `queued`, `running`, `retrying`, `failed`, and `completed` states |
+| **Timeline tracking** | Each job records lifecycle events for debugging and traceability |
 
 ---
 
@@ -61,6 +68,8 @@ This mirrors internal productivity tooling where **repeatability, traceability, 
 - **GitHub Actions CI passing**
 - **React / Next.js frontend dashboard**
 - **FastAPI backend with structured response schemas**
+- **Async job lifecycle with `queued` / `running` / `retrying` / `failed` / `completed` states**
+- **Worker-driven processing with retry handling and per-job timeline tracking**
 
 ---
 
@@ -69,24 +78,38 @@ This mirrors internal productivity tooling where **repeatability, traceability, 
 ```mermaid
 flowchart TD
     A[Next.js Dashboard] --> B[FastAPI API Layer]
-    B --> C[Workflow Engine]
-    C --> D[Jobs]
-    C --> E[Batches]
-    C --> F[Diff]
-    C --> G[Exports]
-    C --> H[History / Versions]
-    C --> I[Dashboard Services]
-    C --> J[Storage Layer]
-    C --> K[Analyzer]
+    B --> C[Jobs API]
+    B --> D[Batches API]
+    B --> E[Diff API]
+    B --> F[Export API]
+    B --> G[History / Versions API]
+    B --> H[Dashboard API]
 
-    D --> J
-    E --> J
-    F --> J
-    G --> J
-    H --> J
-    I --> J
-    K --> J
+    C --> I[Worker Lifecycle]
+    D --> I
+    I --> J[Analyzer Service]
+
+    E --> K[Diff Service]
+    F --> L[Export Service]
+    G --> M[Version Tracking]
+    H --> N[Metrics / Stability Views]
+
+    J --> O[Storage Layer]
+    K --> O
+    L --> O
+    M --> O
+    N --> O
 ```
+
+---
+
+## Screenshots
+
+### Dashboard
+
+![ResuMate Dashboard](docs/assets/resumate-dashboard.png)
+
+*Shows summary metrics, recent jobs, and stability grouping by input fingerprint.*
 
 ---
 
@@ -95,25 +118,29 @@ flowchart TD
 A typical ResuMate flow:
 
 ```
-Submit document → create job → run analysis → review history → compare versions → export Markdown report
+Submit document → create job → process asynchronously → review history → compare versions → export Markdown report
 ```
 
 1. Submit a source document and reference document to `POST /v1/jobs`
-2. Receive a schema-versioned structured analysis response
-3. Inspect prior runs through history and version endpoints
-4. Compare two runs with `POST /v1/diff`
-5. Export a job as JSON or Markdown for downstream review or reporting
+2. Receive a job record with lifecycle state and fingerprint
+3. Process the job through `queued` → `running` → `retrying` → `completed` or `failed`
+4. Inspect prior runs through history and version endpoints
+5. Compare two runs with `POST /v1/diff`
+6. Export a job as JSON or Markdown for downstream review or reporting
 
 ---
 
-## Screenshots
+## Status Model
 
-### Dashboard Home
-![Dashboard Home](docs/assets/resumate-dashboard.png)
+ResuMate supports a small but useful async lifecycle model:
 
-*Shows total jobs, batches, avg processing time, success rate, recent jobs table, and stability grouping by input fingerprint.*
-
-> Additional screenshots (Job History, Diff View) to be added to `docs/assets/` as they become available.
+| Status | Description |
+|---|---|
+| `queued` | Job accepted by the API and waiting for worker execution |
+| `running` | Worker started processing the job |
+| `retrying` | Job hit an error and is being retried under retry policy |
+| `failed` | Job exhausted retries or hit a terminal failure |
+| `completed` | Job finished successfully and produced structured output |
 
 ---
 
@@ -157,7 +184,7 @@ Submit document → create job → run analysis → review history → compare v
 
 ### `POST /v1/jobs`
 
-**Request:**
+**Request**
 
 ```json
 {
@@ -172,14 +199,15 @@ Submit document → create job → run analysis → review history → compare v
 }
 ```
 
-**Response:**
+**Response**
 
 ```json
 {
   "job_id": "job_123abc",
   "status": "completed",
   "schema_version": "1.0.0",
-  "created_at": "2026-03-08T06:35:27.008820Z",
+  "created_at": "2026-03-12T20:46:40.072803Z",
+  "updated_at": "2026-03-12T20:46:40.074000Z",
   "processing_time_ms": 1,
   "input_fingerprint": "sha256:...",
   "analysis": {
@@ -189,7 +217,9 @@ Submit document → create job → run analysis → review history → compare v
         "requirement_id": "req_1",
         "requirement_text": "Looking for backend engineer with APIs and observability",
         "coverage": "partial",
-        "evidence": ["Document contains signals relevant to: api, fastapi"],
+        "evidence": [
+          "Document contains signals relevant to: api, fastapi"
+        ],
         "confidence": 0.65
       }
     ],
@@ -202,7 +232,7 @@ Submit document → create job → run analysis → review history → compare v
 
 ### `POST /v1/diff`
 
-**Request:**
+**Request**
 
 ```json
 {
@@ -211,7 +241,7 @@ Submit document → create job → run analysis → review history → compare v
 }
 ```
 
-**Response:**
+**Response**
 
 ```json
 {
@@ -230,6 +260,59 @@ Submit document → create job → run analysis → review history → compare v
 
 ---
 
+## Sample Job Timeline
+
+### Successful run
+
+```json
+[
+  {
+    "status": "queued",
+    "timestamp": "2026-03-12T20:46:40.072803Z",
+    "message": "Job accepted by API and queued for processing."
+  },
+  {
+    "status": "running",
+    "timestamp": "2026-03-12T20:46:40.073101Z",
+    "message": "Worker picked up queued job."
+  },
+  {
+    "status": "completed",
+    "timestamp": "2026-03-12T20:46:40.074000Z",
+    "message": "Job completed successfully."
+  }
+]
+```
+
+### Retry / failure path
+
+```json
+[
+  {
+    "status": "queued",
+    "timestamp": "2026-03-12T20:46:40.072803Z",
+    "message": "Job accepted by API and queued for processing."
+  },
+  {
+    "status": "running",
+    "timestamp": "2026-03-12T20:46:40.073101Z",
+    "message": "Worker picked up queued job."
+  },
+  {
+    "status": "retrying",
+    "timestamp": "2026-03-12T20:46:40.073550Z",
+    "message": "Retrying after error: transient analyzer failure"
+  },
+  {
+    "status": "failed",
+    "timestamp": "2026-03-12T20:46:40.074200Z",
+    "message": "Job failed after retries: transient analyzer failure"
+  }
+]
+```
+
+---
+
 ## Response Schema
 
 Every job response returns a stable, schema-versioned payload with fixed top-level keys:
@@ -239,7 +322,8 @@ Every job response returns a stable, schema-versioned payload with fixed top-lev
   "job_id": "job_123abc",
   "status": "completed",
   "schema_version": "1.0.0",
-  "created_at": "2026-03-08T06:35:27.008820Z",
+  "created_at": "2026-03-12T20:46:40.072803Z",
+  "updated_at": "2026-03-12T20:46:40.074000Z",
   "processing_time_ms": 1,
   "input_fingerprint": "sha256:...",
   "analysis": {
@@ -256,6 +340,16 @@ Downstream consumers always receive stable keys, predictable array defaults, and
 
 ---
 
+## Why Fingerprinting Exists
+
+Fingerprinting exists for three practical reasons:
+
+- **Repeatability** — the same normalized input should map to the same fingerprint
+- **Grouping** — repeated runs can be clustered together in history and dashboard views
+- **Stability view** — fingerprints make it easy to surface identical-input runs and inspect output consistency over time
+
+---
+
 ## Project Structure
 
 ```
@@ -264,7 +358,8 @@ app/
 ├── schemas/      # Request/response models, domain models, error models
 ├── services/     # Business logic (analysis, batching, diffing, exports, metrics)
 ├── storage/      # Persistence layer (currently in-memory; structured for Mongo restoration)
-└── utils/        # Shared helpers (hashing, timing)
+├── utils/        # Shared helpers (hashing, timing)
+└── workers/      # Async job lifecycle and processing flow
 
 frontend/         # Next.js dashboard
 dashboard/        # Earlier Streamlit prototype assets
@@ -277,14 +372,14 @@ tests/            # Smoke, contract, integration, and schema validation tests
 
 ## Running the App
 
-**Install backend dependencies and start the API:**
+Install backend dependencies and start the API:
 
 ```bash
 pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8002
 ```
 
-**In a separate terminal, start the frontend:**
+In a separate terminal, start the frontend:
 
 ```bash
 cd frontend
@@ -319,23 +414,17 @@ python -m pytest -q -ra -vv
 
 ---
 
-## Quality and Validation
-
-- **12 automated tests** covering health, jobs, history, versions, batches, diff, exports, dashboard, schema validation, and output stability
-- **OpenAPI contract tests** verify expected endpoint coverage
-- **Integration tests** exercise end-to-end flows: job creation, diffing, exporting, and dashboard summary retrieval
-- **GitHub Actions CI** runs the test suite on push and pull request
-- **Slim CI dependency path** isolates test/runtime requirements from the larger local development environment
-
----
-
 ## Engineering Decisions
 
-- **Schema-versioned JSON contracts** — Outputs stay stable, testable, and easier to integrate with downstream tooling.
-- **SHA-256 input fingerprinting** — Supports repeatability checks, deduplication detection, and stability grouping across repeated inputs.
-- **Fallback analyzer mode** — Preserves schema-valid output even when model-backed analysis is unavailable, keeping API behavior predictable.
-- **CI-safe config handling** — Tests and clean environments do not require production-only settings at import time.
-- **Slim CI requirements** — Separated from the full local requirements path to avoid heavyweight dependencies and improve pipeline reliability.
+**Schema-versioned JSON contracts** — Outputs stay stable, testable, and easier to integrate with downstream tooling.
+
+**SHA-256 input fingerprinting** — Supports repeatability checks, deduplication detection, and stability grouping across repeated inputs.
+
+**Fallback analyzer mode** — Preserves schema-valid output even when model-backed analysis is unavailable, keeping API behavior predictable.
+
+**CI-safe config handling** — Tests and clean environments do not require production-only settings at import time.
+
+**Slim CI requirements** — Separated from the full local requirements path to avoid heavyweight dependencies and improve pipeline reliability.
 
 ---
 
@@ -347,20 +436,17 @@ The current analyzer uses a rule-based fallback mode that produces schema-valid 
 
 ### Storage
 
-State is currently held in-memory for local prototyping. The storage layer is structured to support Mongo-backed persistence, but persistence is temporarily disabled while the local or managed connection path is being restored. **State does not survive restarts in the current prototype.**
+State is currently held in-memory for local prototyping. The storage layer is structured to support Mongo-backed persistence, but persistence is temporarily disabled while the local or managed connection path is being restored. State does not survive restarts in the current prototype.
 
-### Fingerprinting
+### Async lifecycle
 
-Inputs are normalized and hashed with SHA-256 before processing, enabling:
-
-- Deduplication detection
-- Stability grouping across repeated inputs
-- Reasoning about output consistency across runs
+Jobs are accepted immediately, assigned a lifecycle state, and processed through a worker path that records timeline events and retry attempts. This gives the platform a more realistic internal-tooling execution model than a single synchronous request/response flow.
 
 ---
 
 ## What's Next
 
+- [ ] Add auth, roles, and audit trail for multi-user/admin workflows
 - [ ] Restore Mongo persistence for jobs, batches, versions, and exports
 - [ ] Re-enable model-backed analysis with structured output validation
 - [ ] Expand test coverage beyond current contract, smoke, and integration paths
@@ -371,13 +457,13 @@ Inputs are normalized and hashed with SHA-256 before processing, enabling:
 
 ## Design Philosophy
 
-ResuMate is framed as an **internal tooling system**, not a consumer AI product.
+ResuMate is framed as an internal tooling system, not a consumer AI product.
 
 The emphasis is on:
 
 - **Stable API contracts** over free-form generation
 - **Repeatable, traceable workflow execution**
 - **Structured outputs** that are testable, exportable, and automatable
-- **Operational clarity** through history, versioning, diffing, and dashboard visibility
+- **Operational clarity** through history, versioning, diffing, lifecycle states, and dashboard visibility
 
 The resume-analysis use case is the vehicle. The backend workflow system is the point.
