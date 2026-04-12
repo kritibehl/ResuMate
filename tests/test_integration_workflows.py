@@ -9,13 +9,13 @@ def make_payload(name: str, ref: str):
     return {
         "document_text": f"Built backend systems for {name} with FastAPI and observability.",
         "reference_text": ref,
-        "document_type": "resume",
+        "document_type": "document",
         "reference_type": "job_description",
         "metadata": {"document_name": name, "reference_name": "backend_role"},
     }
 
 
-def test_resume_analysis_diff_export_workflow():
+def test_doc_analysis_diff_export_workflow():
     first = client.post("/v1/jobs", json=make_payload("workflow_left", "Looking for backend engineer with APIs and observability."))
     second = client.post("/v1/jobs", json=make_payload("workflow_right", "Looking for backend engineer with distributed systems and observability."))
 

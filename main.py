@@ -44,15 +44,15 @@ def analyze_resume(data: ResumeInput):
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "You are a resume analysis assistant."},
-                {"role": "user", "content": f"Analyze this resume:\n\n{data.text}\n\nGive strengths, weaknesses, and ideal job roles."}
+                {"role": "system", "content": "You are a structured document analysis engine."},
+                {"role": "user", "content": f"Analyze this document:\n\n{data.text}\n\nGive strengths, weaknesses, and ideal job roles."}
             ]
         )
         result = response['choices'][0]['message']['content']
 
         records.insert_one({
             "type": "analyze",
-            "resume_text": data.text,
+            "document_text": data.text,
             "summary": result,
             "timestamp": datetime.utcnow()
         })

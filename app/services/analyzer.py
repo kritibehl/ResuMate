@@ -4,7 +4,7 @@ from app.schemas.errors import ErrorItem
 from app.schemas.response import AnalysisResult, GapItem, MatchedRequirement
 
 
-def _extract_candidate_requirements(reference_text: str) -> list[str]:
+def _extract_reference_requirements(reference_text: str) -> list[str]:
     parts = re.split(r"[.\n;•\-]+", reference_text)
     cleaned = []
     seen = set()
@@ -23,7 +23,7 @@ def _extract_candidate_requirements(reference_text: str) -> list[str]:
 
 
 def _fallback_analysis(document_text: str, reference_text: str) -> AnalysisResult:
-    requirements = _extract_candidate_requirements(reference_text)
+    requirements = _extract_reference_requirements(reference_text)
     doc_lower = document_text.lower()
 
     matched: list[MatchedRequirement] = []

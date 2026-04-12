@@ -9,7 +9,7 @@ def make_payload(name: str, ref: str):
     return {
         "document_text": f"Built FastAPI services with Prometheus and tracing for {name}.",
         "reference_text": ref,
-        "document_type": "resume",
+        "document_type": "document",
         "reference_type": "job_description",
         "metadata": {
             "document_name": name,
@@ -21,11 +21,11 @@ def make_payload(name: str, ref: str):
 def test_diff_and_export():
     left = client.post(
         "/v1/jobs",
-        json=make_payload("resume_diff_left", "Looking for backend engineer with APIs and observability."),
+        json=make_payload("doc_diff_left", "Looking for backend engineer with APIs and observability."),
     )
     right = client.post(
         "/v1/jobs",
-        json=make_payload("resume_diff_right", "Looking for backend engineer with distributed systems and observability."),
+        json=make_payload("doc_diff_right", "Looking for backend engineer with distributed systems and observability."),
     )
 
     assert left.status_code == 200

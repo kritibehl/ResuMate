@@ -3,7 +3,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
-DocumentType = Literal["resume", "document", "cover_letter", "other"]
+DocumentType = Literal["document", "structured_text", "reference", "other"]
 ReferenceType = Literal["job_description", "rubric", "document", "other"]
 
 
@@ -15,6 +15,6 @@ class JobMetadata(BaseModel):
 class JobCreateRequest(BaseModel):
     document_text: str = Field(..., min_length=1)
     reference_text: str = Field(..., min_length=1)
-    document_type: DocumentType = "resume"
+    document_type: DocumentType = "document"
     reference_type: ReferenceType = "job_description"
     metadata: JobMetadata = Field(default_factory=JobMetadata)

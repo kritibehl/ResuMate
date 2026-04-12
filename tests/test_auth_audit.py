@@ -9,7 +9,7 @@ def make_payload(name: str = "auth_case"):
     return {
         "document_text": "Built FastAPI services with tracing and observability.",
         "reference_text": "Looking for backend engineer with APIs and observability.",
-        "document_type": "resume",
+        "document_type": "document",
         "reference_type": "job_description",
         "metadata": {
             "document_name": name,

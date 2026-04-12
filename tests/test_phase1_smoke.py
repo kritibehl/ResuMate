@@ -15,10 +15,10 @@ def test_create_job():
     payload = {
         "document_text": "Built a distributed job processor with lease-based locking, retries, Prometheus metrics, and failure recovery.",
         "reference_text": "Looking for backend engineer with distributed systems, observability, and API experience.",
-        "document_type": "resume",
+        "document_type": "document",
         "reference_type": "job_description",
         "metadata": {
-            "document_name": "resume_v1",
+            "document_name": "doc_v1",
             "reference_name": "backend_role",
         },
     }
